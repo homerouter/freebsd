@@ -1,0 +1,56 @@
+name: Build FreeBSD World and Kernel from macos-latest
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build FreeBSD World and Kernel
+    runs-on: macos-latest  # Switched from ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build FreeBSD in VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "14.0"
+          prepare: |
+            pkg update -f
+            pkg install -y git
+            git clone https://git.freebsd.org/src.git /usr/src
+            cd /usr/src
+            git checkout 390dc369efaaeca2802baf168ddbd7a40e3afcc8
+          run: |
+            cd /usr/src
+            make -j$(sysctl -n hw.ncpu) buildworld
+            make -j$(sysctl -n hw.ncpu) buildkernel KERNCONF=GENERIC
+            mkdir -p /tmp/artifacts/kernel
+            cp /usr/obj/usr/src/amd64.amd64/sys/GENERIC/kernel /tmp/artifacts/kernel/
+            mkdir -p /tmp/artifacts/world
+            make -C /usr/src DESTDIR=/tmp/artifacts/world installworld
+            make -C /usr/src DESTDIR=/tmp/artifacts/world distribution
+            tar -czf /tmp/artifacts/world.tar.gz -C /tmp/artifacts/world .
+          copyback: |
+            mkdir -p ${{ github.workspace }}/artifacts
+            cp /tmp/artifacts/kernel/kernel ${{ github.workspace }}/artifacts/
+            cp /tmp/artifacts/world.tar.gz ${{ github.workspace }}/artifacts/
+
+      - name: Upload Kernel Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: freebsd-kernel
+          path: ${{ github.workspace }}/artifacts/kernel
+          if-no-files-found: error
+
+      - name: Upload World Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: freebsd-world
+          path: ${{ github.workspace }}/artifacts/world.tar.gz
+          if-no-files-found: error
