@@ -1,6 +1,8 @@
 name: Build FreeBSD World and Kernel from macos-latest
 
 on:
+  workflow_dispatch:
+
   push:
     branches:
       - main
