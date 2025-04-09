@@ -10,34 +10,24 @@ jobs:
   build-pf:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Run FreeBSD VM
       - name: Run FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          release: "14.0" # Use a recent FreeBSD version
+          release: "14.0"
           prepare: |
-            # Install required tools for building kernel modules
-            pkg install -y git
+            pkg install -y git devel/freebsd-buildutils
           run: |
-            # Step 2: Clone FreeBSD source repository
             git clone https://git.freebsd.org/src.git freebsd-src
             cd freebsd-src
-
-            # Step 3: Checkout the specific commit
             git checkout 390dc369efaaeca2802baf168ddbd7a40e3afcc8
-
-            # Step 4: Build the pf module
             cd sys/modules/pf
             make || { echo "Build failed"; exit 1; }
-
-            # Optional: Save the built module as an artifact
-
             mkdir -p $GITHUB_WORKSPACE/artifacts
             cp pf.ko $GITHUB_WORKSPACE/artifacts/
             
-      # Step 5: Upload the built pf.ko as an artifact
       - name: Upload pf.ko
         uses: actions/upload-artifact@v4
         with:
           name: pf-module
           path: $GITHUB_WORKSPACE/artifacts/pf.ko
+          if-no-files-found: error # Fail the workflow if the artifact is missing
