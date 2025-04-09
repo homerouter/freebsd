@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     name: Build FreeBSD Install ISO
-    runs-on:  ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -19,6 +19,9 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           release: "14.0"
+          usesh: true  # Ensure sh shell for consistency
+          envs: MAKEOBJDIRPREFIX=/usr/obj  # Explicit obj dir
+          sync: rsync
           prepare: |
             pkg update -f
             pkg install -y git
@@ -27,20 +30,23 @@ jobs:
             git checkout 390dc369efaaeca2802baf168ddbd7a40e3afcc8
           run: |
             cd /usr/src
-            # Build world and kernel
+            df -h  # Monitor VM disk space
+            # Build world and clean
             make -j$(sysctl -n hw.ncpu) buildworld
+            make -C /usr/src clean
+            df -h
+            # Build kernel and clean
             make -j$(sysctl -n hw.ncpu) buildkernel KERNCONF=GENERIC
             make -C /usr/src clean
-            # Build release (ISO)
+            df -h
+            # Build release (smaller ISO)
             make -j$(sysctl -n hw.ncpu) release \
-              WITH_DVD=1 \
-              WITH_VMIMAGES=0 \
               TARGET=amd64 \
               TARGET_ARCH=amd64
+            df -h
             # Stage the ISO
             mkdir -p /tmp/artifacts
             cp /usr/obj/usr/src/amd64.amd64/release/FreeBSD-*.iso /tmp/artifacts/freebsd-install.iso
-            # Clean up release dir
             rm -rf /usr/obj/usr/src/amd64.amd64/release/*
           copyback: |
             mkdir -p ${{ github.workspace }}/artifacts
