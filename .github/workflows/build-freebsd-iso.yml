@@ -10,7 +10,10 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
+        
+      - name: Monitor Disk Space
+        run: |
+          df -h
 
       - name: Build FreeBSD ISO in VM
         uses: vmactions/freebsd-vm@v1
@@ -27,6 +30,7 @@ jobs:
             # Build world and kernel
             make -j$(sysctl -n hw.ncpu) buildworld
             make -j$(sysctl -n hw.ncpu) buildkernel KERNCONF=GENERIC
+            make -C /usr/src clean
             # Build release (ISO)
             make -j$(sysctl -n hw.ncpu) release \
               WITH_DVD=1 \
@@ -36,10 +40,16 @@ jobs:
             # Stage the ISO
             mkdir -p /tmp/artifacts
             cp /usr/obj/usr/src/amd64.amd64/release/FreeBSD-*.iso /tmp/artifacts/freebsd-install.iso
+            # Clean up release dir
+            rm -rf /usr/obj/usr/src/amd64.amd64/release/*
           copyback: |
             mkdir -p ${{ github.workspace }}/artifacts
             cp /tmp/artifacts/freebsd-install.iso ${{ github.workspace }}/artifacts/
 
+      - name: Monitor Disk Space After Build
+        run: |
+          df -h
+          
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
