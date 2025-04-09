@@ -19,6 +19,7 @@ jobs:
       - name: Build FreeBSD in VM
         uses: vmactions/freebsd-vm@v1
         with:
+          release: "14.0"
           usesh: true
           envs: |
             MAKEOBJDIRPREFIX=/usr/obj
