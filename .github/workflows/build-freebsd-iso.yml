@@ -1,0 +1,53 @@
+name: Build FreeBSD Install ISO
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build FreeBSD Install ISO
+    runs-on:  ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+
+      - name: Build FreeBSD ISO in VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "14.0"
+          prepare: |
+            pkg update -f
+            pkg install -y git
+            git clone https://git.freebsd.org/src.git /usr/src
+            cd /usr/src
+            git checkout 390dc369efaaeca2802baf168ddbd7a40e3afcc8
+          run: |
+            cd /usr/src
+            # Build world and kernel
+            make -j$(sysctl -n hw.ncpu) buildworld
+            make -j$(sysctl -n hw.ncpu) buildkernel KERNCONF=GENERIC
+            # Build release (ISO)
+            make -j$(sysctl -n hw.ncpu) release \
+              WITH_DVD=1 \
+              WITH_VMIMAGES=0 \
+              TARGET=amd64 \
+              TARGET_ARCH=amd64
+            # Stage the ISO
+            mkdir -p /tmp/artifacts
+            cp /usr/obj/usr/src/amd64.amd64/release/FreeBSD-*.iso /tmp/artifacts/freebsd-install.iso
+          copyback: |
+            mkdir -p ${{ github.workspace }}/artifacts
+            cp /tmp/artifacts/freebsd-install.iso ${{ github.workspace }}/artifacts/
+
+      - name: Upload ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: freebsd-install-iso
+          path: ${{ github.workspace }}/artifacts/freebsd-install.iso
+          if-no-files-found: error
