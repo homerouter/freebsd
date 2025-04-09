@@ -14,7 +14,7 @@ jobs:
       - name: Run FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
-          release: 14.0 # Use a recent FreeBSD version
+          release: 14 # Use a recent FreeBSD version
           prepare: |
             # Install required tools for building kernel modules
             pkg install -y git
