@@ -2,7 +2,6 @@ name: Build FreeBSD Kernel
 
 on:
   workflow_dispatch:
-
   push:
     branches:
       - main
@@ -12,16 +11,23 @@ on:
 
 jobs:
   build:
-    name: Build FreeBSD Kernel and World
+    name: Build FreeBSD Kernel  # Updated to reflect kernel-only
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Build FreeBSD in VM
+      - name: Monitor Disk Space
+        run: |
+          df -h
+
+      - name: Build FreeBSD Kernel in VM
         uses: vmactions/freebsd-vm@v1
         with:
           release: "14.0"
+          usesh: true  # Added for shell consistency
+          envs: MAKEOBJDIRPREFIX=/usr/obj  # Explicit obj dir
+          sync: rsync  # Added for file syncing
           prepare: |
             pkg update -f
             pkg install -y git
@@ -30,14 +36,23 @@ jobs:
             git checkout 390dc369efaaeca2802baf168ddbd7a40e3afcc8
           run: |
             cd /usr/src
-            make -j$(sysctl -n hw.ncpu) buildworld
+            df -h  # Monitor VM disk space
+            # Build kernel only
             make -j$(sysctl -n hw.ncpu) buildkernel KERNCONF=GENERIC
-            # Stage the kernel for copyback
+            df -h
+            # Stage the kernel
             mkdir -p /tmp/artifacts
-            cp /usr/obj/usr/src/amd64.amd64/sys/GENERIC/kernel /tmp/artifacts/
+            cp /usr/obj/usr/src/amd64.amd64/sys/GENERIC/kernel /tmp/artifacts/kernel
+            # Clean up
+            make -C /usr/src clean
+            df -h
           copyback: |
             mkdir -p ${{ github.workspace }}/artifacts
             cp /tmp/artifacts/kernel ${{ github.workspace }}/artifacts/
+
+      - name: Monitor Disk Space After Build
+        run: |
+          df -h
 
       - name: Upload Kernel Artifact
         uses: actions/upload-artifact@v4
