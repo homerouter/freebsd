@@ -28,7 +28,7 @@ jobs:
 
             # Step 4: Build the pf module
             cd sys/modules/pf
-            make
+            make || { echo "Build failed"; exit 1; }
 
             # Optional: Save the built module as an artifact
             mkdir -p /tmp/artifacts
