@@ -1,22 +1,16 @@
-name: Build FreeBSD Kernel
+name: Build FreeBSD Install Kernel
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build:
-    name: Build FreeBSD Kernel  # Updated to reflect kernel-only
+    name: Build FreeBSD Install Kernel
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
+        
       - name: Monitor Disk Space
         run: |
           df -h
@@ -25,8 +19,9 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           release: "14.0"
-          usesh: true  # Added for shell consistency
+          usesh: true  # Ensure sh shell for consistency
           envs: MAKEOBJDIRPREFIX=/usr/obj  # Explicit obj dir
+          sync: rsync
           prepare: |
             pkg update -f
             pkg install -y git
