@@ -31,12 +31,13 @@ jobs:
             make || { echo "Build failed"; exit 1; }
 
             # Optional: Save the built module as an artifact
-            mkdir -p /tmp/artifacts
-            cp pf.ko /tmp/artifacts/
+
+            mkdir -p $GITHUB_WORKSPACE/artifacts
+            cp pf.ko $GITHUB_WORKSPACE/artifacts/
             
       # Step 5: Upload the built pf.ko as an artifact
       - name: Upload pf.ko
         uses: actions/upload-artifact@v4
         with:
           name: pf-module
-          path: /tmp/artifacts/pf.ko
+          path: $GITHUB_WORKSPACE/artifacts/pf.ko
