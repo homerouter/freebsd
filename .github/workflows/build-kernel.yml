@@ -20,10 +20,6 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           release: "14.0"
-          usesh: true
-          envs: |
-            MAKEOBJDIRPREFIX=/usr/obj
-          sync: rsync
           prepare: |
             pkg update -f
             pkg install -y git
