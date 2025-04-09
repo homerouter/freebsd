@@ -15,7 +15,7 @@ jobs:
         with:
           release: "14.0"
           prepare: |
-            pkg install -y git devel/freebsd-buildutils
+            pkg install -y git 
           run: |
             git clone https://git.freebsd.org/src.git freebsd-src
             cd freebsd-src
