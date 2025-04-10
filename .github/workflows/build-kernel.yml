@@ -14,7 +14,14 @@ jobs:
       - name: Monitor Disk Space
         run: |
           df -h
-
+      - name: Debug SSH Config
+        run: |
+          if [ -f /home/runner/.ssh/config ]; then
+            echo "SSH Config Contents:"
+            cat /home/runner/.ssh/config
+          else
+            echo "No SSH config file found yet."
+          fi
       - name: Build FreeBSD Kernel in VM
         uses: vmactions/freebsd-vm@v1
         with:
