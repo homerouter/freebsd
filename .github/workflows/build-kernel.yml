@@ -21,7 +21,6 @@ jobs:
           release: "14.0"
           usesh: true  # Ensure sh shell for consistency
           envs: MAKEOBJDIRPREFIX=/usr/obj  # Explicit obj dir
-          sync: rsync
           prepare: |
             pkg update -f
             pkg install -y git
